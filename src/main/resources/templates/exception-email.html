@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>SOS Exception</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,900,700,300%7COpen+Sans:400,300,600"
+        rel="stylesheet">
+</head>
+
+<body>
+    <table width="100%" style="border: 1px solid black">
+
+        <tr>
+            <td style="width:200px; border: 1px solid black">
+                <b>Time</b>
+            </td>
+            <td style="border: 1px solid black">
+                ${time}
+            </td>
+        </tr>
+        <#if grRequestId?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>GR Request ID</b>
+                </td>
+                <td style="border: 1px solid black">
+                    ${grRequestId}
+                </td>
+            </tr>
+        </#if>
+        <#if uri?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>URL</b>
+                </td>
+                <td style="border: 1px solid black">
+                    ${uri}
+                </td>
+            </tr>
+        </#if>
+        <#if httpMethod?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>HTTP Method</b>
+                    </td">
+                <td style="border: 1px solid black">
+                    ${httpMethod}
+                </td>
+            </tr>
+        </#if>
+        <#if requestHeaders?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>Request Headers</b>
+                    </td">
+                <td style="border: 1px solid black">
+                    <pre>${requestHeaders}</pre>
+                </td>
+            </tr>
+        </#if>
+        <#if requestJson?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>Request Json</b>
+                    </td">
+                <td style="border: 1px solid black">
+                    <pre>${requestJson}</pre>
+                </td>
+            </tr>
+        </#if>
+        <#if responseJson?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>Response Json</b>
+                    </td">
+                <td style="border: 1px solid black">
+                    <pre>${responseJson}</pre>
+                </td>
+            </tr>
+        </#if>
+        <#if methodName?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>Method Name</b>
+                </td>
+                <td style="border: 1px solid black">
+                    ${methodName}
+                </td>
+            </tr>
+        </#if>
+        <#if className?has_content>
+            <tr>
+                <td style="width:200px; border: 1px solid black">
+                    <b>Class Name</b>
+                    </td">
+                <td style="border: 1px solid black">
+                    ${className}
+                </td>
+            </tr>
+        </#if>
+
+        <#if params?has_content>
+            <#list params as param>
+                <tr>
+                    <td style="width:200px; border: 1px solid black">
+                        <b>${param.name}</b>
+                        </td">
+                    <td style="border: 1px solid black">
+                        <pre>${param.json}</pre>
+                    </td>
+                </tr>
+            </#list>
+        </#if>
+        
+        <tr>
+            <td style="width:200px; border: 1px solid black">
+                <b>Stack Trace</b>
+                </td">
+            <td style="border: 1px solid black">
+                <pre>${stackTrace}</pre>
+            </td>
+        </tr>
+
+    </table>
+</body>
+
+</html>

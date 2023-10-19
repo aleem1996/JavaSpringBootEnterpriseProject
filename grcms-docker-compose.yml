@@ -1,0 +1,29 @@
+version: '3.9'
+services:
+  GRID2:
+    container_name: GRCMS
+    image: registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:beta
+    hostname: grcms
+    environment:
+      - TZ=UTC
+    env_file:
+      - /root/data/.env
+    networks:
+      route-22:
+        ipv4_address: 10.22.6.8
+    volumes:
+      - type: volume
+        source: grhome
+        target: /home/grhome/
+        volume:
+          nocopy: true
+volumes:
+  grhome:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.1.91,rw,nolock,soft"
+      device: ":/mnt/DATA/beta/grhome"
+networks:
+  route-22:
+    external: yes

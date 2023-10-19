@@ -1,0 +1,228 @@
+stages: 
+#DEV
+    - build-dev
+    - deploy-dev
+#QA
+    - build-qa
+    - deploy-qa
+#UAT
+    - build-uat
+    - deploy-uat
+#BETA
+    - build-beta
+    - deploy-beta
+#STG
+    - build-stg
+    - deploy-stg
+#PROD
+    - build-prod
+    - deploy-prod
+      
+build-dev:
+    stage: build-dev
+    tags:
+        - dev-ci
+    only:
+        refs:
+            - dev-ci
+    
+    environment:
+      name: dev-ci
+            
+    script: 
+        - | 
+            mvn --version
+            mvn clean prepare-package -U -DskipTests=true
+
+            sudo docker login registry.globalrescue.com:4567 -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD
+            sudo docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-base:dev
+            sudo docker build -f Dockerfile-dev -t registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:dev --build-arg mysql=$db_host --build-arg username=$db_username --build-arg password=$db_password .
+            sudo docker push registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:dev
+
+build-qa:
+    stage: build-qa
+    tags:
+        - qa-ci
+    only:
+        refs:
+            - qa-ci
+    environment:
+      name: qa-ci
+            
+    script: 
+        - | 
+            mvn --version
+            mvn clean prepare-package -U -DskipTests=true
+
+            sudo docker login registry.globalrescue.com:4567 -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD
+            sudo docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-base:qa
+            sudo docker build -f Dockerfile-qa -t registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:qa --build-arg mysql=$db_host --build-arg username=$db_username --build-arg password=$db_password .
+            sudo docker push registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:qa
+
+build-uat:
+    stage: build-uat
+    tags:
+        - uat-ci
+    only:
+        refs:
+            - uat-ci
+            
+    environment:
+      name: uat-ci        
+            
+    script: 
+        - | 
+            mvn --version
+            mvn clean prepare-package -U -DskipTests=true
+
+            sudo docker login registry.globalrescue.com:4567 -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD
+            sudo docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-base:uat
+            sudo docker build -f Dockerfile-uat -t registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:uat --build-arg mysql=$db_host --build-arg username=$db_username --build-arg password=$db_password .
+            sudo docker push registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:uat
+
+build-beta:
+    stage: build-beta
+    tags:
+        - beta
+    only:
+        refs:
+            - beta
+            
+    environment:
+      name: beta        
+            
+    script: 
+        - | 
+            mvn --version
+            mvn clean prepare-package -U -DskipTests=true
+
+            sudo docker login registry.globalrescue.com:4567 -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD
+            sudo docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-base:beta
+            sudo docker build -f Dockerfile-beta -t registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:beta --build-arg mysql=$db_host --build-arg username=$db_username --build-arg password=$db_password .
+            sudo docker push registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:beta
+
+build-stg:
+    stage: build-stg
+    tags:
+        - stg,aws
+    only:
+        refs:
+            - stg-ci
+            
+    script: 
+        - | 
+            whoami
+            set -o allexport; source ~/.env; set +o allexport
+            mvn --version
+            mvn clean prepare-package -U
+            pwd="$(aws ecr get-login-password --region us-east-1)"
+            sudo docker login -u AWS --password "$pwd" https://687144405948.dkr.ecr.us-east-1.amazonaws.com
+            sudo docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-base:stg
+            sudo docker build -f Dockerfile-stg -t stg-gr-census-management-service .
+            sudo docker tag stg-gr-census-management-service:latest 687144405948.dkr.ecr.us-east-1.amazonaws.com/stg-gr-census-management-service:latest
+            sudo docker push 687144405948.dkr.ecr.us-east-1.amazonaws.com/stg-gr-census-management-service:latest
+
+build-prod:
+    stage: build-prod
+    tags:
+        - stg,aws
+    only:
+        refs:
+            - prod
+            
+    script: 
+        - | 
+            whoami
+            set -o allexport; source ~/.prod.env; set +o allexport
+            mvn --version
+            mvn clean prepare-package -U -DskipTests
+            pwd="$(aws ecr get-login-password --region us-east-1)"
+            sudo docker login -u AWS --password "$pwd" https://687144405948.dkr.ecr.us-east-1.amazonaws.com
+            sudo docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-base:prod
+            sudo docker build -f Dockerfile-prod -t prod-gr-census-management-service .
+            sudo docker tag prod-gr-census-management-service:latest 687144405948.dkr.ecr.us-east-1.amazonaws.com/prod-gr-census-management-service:latest
+            sudo docker push 687144405948.dkr.ecr.us-east-1.amazonaws.com/prod-gr-census-management-service:latest
+
+deploy-dev:
+    stage: deploy-dev
+    when: on_success
+    tags:
+        - dev-ci
+    only:
+        refs:
+            - dev-ci
+            
+    script: 
+        - | 
+            ssh root@10.22.2.252 docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:dev
+            ssh root@10.22.2.252 docker-compose -f ~root/data/gr-census-management-service/grcms-docker-compose.yml up -d
+ 
+deploy-qa:
+    stage: deploy-qa
+    when: on_success
+    tags:
+        - qa-ci
+    only:
+        refs:
+            - qa-ci
+            
+    script: 
+        - | 
+            ssh root@10.22.3.252 docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:qa
+            ssh root@10.22.3.252 docker-compose -f ~root/data/gr-census-management-service/grcms-docker-compose.yml up -d
+
+deploy-uat:
+    stage: deploy-uat
+    when: on_success
+    tags:
+        - uat-ci
+    only:
+        refs:
+            - uat-ci
+            
+    script: 
+        - | 
+            ssh root@10.22.5.252 docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:uat
+            ssh root@10.22.5.252 docker-compose -f ~root/data/gr-census-management-service/grcms-docker-compose.yml up -d
+
+deploy-beta:
+    stage: deploy-beta
+    when: on_success
+    tags:
+        - beta
+    only:
+        refs:
+            - beta
+            
+    script: 
+        - | 
+            ssh root@10.22.6.252 docker pull registry.globalrescue.com:4567/gr/grcom/gr-census-management-service/grcms-app:beta
+            ssh root@10.22.6.252 docker-compose -f ~root/data/gr-census-management-service/grcms-docker-compose.yml up -d
+
+deploy-stg:
+    stage: deploy-stg
+    needs: ["build-stg"]
+    when: on_success
+    tags:
+        - stg,aws
+    only:
+        refs:
+            - stg-ci
+            
+    script: 
+        - | 
+            aws ecs update-service --force-new-deployment --service grid2-cencus-management --cluster GRID2-stg
+
+deploy-prod:
+    stage: deploy-prod
+    needs: ["build-prod"]
+    when: on_success
+    tags:
+        - stg,aws
+    only:
+        refs:
+            - prod
+            
+    script: 
+        - | 
+            aws ecs update-service --force-new-deployment --service GRID2-census-management-service --cluster GRID2-PROD 
